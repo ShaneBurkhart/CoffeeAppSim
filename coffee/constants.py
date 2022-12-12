@@ -1,0 +1,5 @@
+MAXIMUM_TIER = 'maximum'
+AVERAGE_TIER = 'average'
+LIGHT_TIER = 'light'
+MICRO_TIER = 'micro'
+STARTER_TIER = 'starter'
