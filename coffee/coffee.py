@@ -17,7 +17,7 @@ import spending
 # maximize the time with the cash 
 # maximize average balance
 
-YEARS_TO_SIMULATE =  2.5
+YEARS_TO_SIMULATE =  2
 DAYS_TO_SIMULATE = round(365 * YEARS_TO_SIMULATE)
 
 FALLOUT_RATE = 0.1
@@ -63,7 +63,7 @@ total_addon_revenue = 0
 for day in range(DAYS_TO_SIMULATE):
 	last_history = history[-1] if history else None
 	if last_history and cash_balance != 0:
-		print(f'Day {day} of {DAYS_TO_SIMULATE}, users: {len(users)}, cash: {cash_balance}, profit: {last_history["unrealized profit"]}, apr: { last_history["apr"] * 100:.2f}%')
+		print(f'Day {day} of {DAYS_TO_SIMULATE}, users: {len(users)}, cash: {cash_balance}, profit: {last_history["unrealized profit"]:.2f} less marketing: {last_history["unrealized profit less marketing"]:.2f}, apr: { last_history["apr"] * 100:.2f}%, cost / cash: {last_history["cost of cash %"] * 100:.2f}, cost / user: {last_history["cost / user"]} ')
 
 
 
@@ -137,11 +137,17 @@ for day in range(DAYS_TO_SIMULATE):
 	total_bonus += bonus
 	total_referrals += new_referrals
 
+	apr = 0
+	if cash_balance and day and day > 365:
+		apr = ((total_bonus + total_cc_fees) * 365 / day) / (cash_balance - STARTING_CASH)
+	elif day and day <= 365:
+		apr = ((total_bonus + total_cc_fees)) / (cash_balance - STARTING_CASH)
+
 	history.append({
 		'day': day,
 		'cash_balance': cash_balance,
 
-		'apr': ((total_bonus + total_cc_fees) * 365 / day) / cash_balance if cash_balance and day else 0,
+		'apr': apr,
 
 		'coffee_expenses': coffee_expenses,
 		'total_coffee_expenses': total_coffee_expenses,
@@ -177,6 +183,7 @@ for day in range(DAYS_TO_SIMULATE):
 		'interest_paid': interest_paid,
 
 		'unrealized profit': total_addon_revenue - interest_paid - total_bonus - total_cc_fees - total_marketing,
+		'unrealized profit less marketing': total_addon_revenue - interest_paid - total_bonus - total_cc_fees, 
 		'cost of cash %': (interest_paid + total_bonus + total_cc_fees + total_marketing) / cash_balance,
 
 		'average account balance': sum([x['balance'] for x in users]) / len(users) if len(users) > 0 else 0,
@@ -197,7 +204,7 @@ df.plot(x='day', y=['interest_cost', 'cashflow'], ax=ax4)
 df.plot(x='day', y=['total_deposits', 'total_coffee_expenses', 'remaining_balances'], ax=ax5)
 df.plot(x='day', y=['users', 'total_referrals'], ax=ax6)
 df.plot(x='day', y=['apr', 'cost of cash %'], ax=ax7)
-ax7.set_ylim(0, 1)
+ax7.set_ylim(0, 0.5)
 plt.savefig('./output/coffee.png')
 
 print("Done!")
